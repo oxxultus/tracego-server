@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: tracego-server  # 애플리케이션 이름 설정
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/tracego_db?serverTimezone=UTC&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
+    username: master
+    password: 20250326
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    hibernate:
+      ddl-auto: update  # 운영 환경에서는 validate 또는 none 사용 권장
+    show-sql: false  # 실행되는 SQL문 콘솔 출력
+    properties:
+      hibernate:
+        format_sql: true  # SQL 정렬하여 출력
+
+  thymeleaf:
+    cache: false  # 개발 환경에서는 false로 설정하여 템플릿 자동 리로딩
+
+  server:
+    port: 8080  # 서버 포트 설정
+    servlet:
+      context-path: /  # 기본 경로 설정 (변경 가능)
+
+  logging:
+    level:
+      root: info  # 전체 로그 레벨 (debug, info, warn, error)            org.springframework.web: debug  # 웹 관련 로그 수준 설정
+      org.hibernate.SQL: info  # Hibernate SQL 실행 로그 출력
+
+  devtools:
+    restart:
+      enabled: true  # 코드 변경 시 자동 재시작
+    livereload:
+      enabled: true  # LiveReload 활성화 (브라우저 자동 새로고침)
+
+  web:
+    encoding:
+      charset: UTF-8

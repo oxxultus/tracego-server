@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>장바구니</title>
+  <style>
+    body {
+      margin: 0;
+      padding-bottom: 60px;
+      font-family: sans-serif;
+      background-color: #f4f4f4;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      background-color: white;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    .logo {
+      font-size: 30px;
+      color: #00c4c4;
+      font-weight: bold;
+    }
+
+    .status-icons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .status-icons div {
+      cursor: pointer;
+    }
+
+    main {
+      padding: 20px;
+    }
+
+    h2 {
+      margin: 0 0 20px;
+      color: #00c4c4;
+    }
+
+    .btn {
+      background-color: #00c4c4;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background-color: #009b9b;
+    }
+
+    article {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      margin: 20px 0;
+      padding: 20px;
+    }
+
+    .quantity-control {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    .quantity-control button {
+      background-color: #00c4c4;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      font-size: 16px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .quantity-control input {
+      width: 50px;
+      text-align: center;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 5px;
+    }
+
+    .btn-delete {
+      background-color: #ff4d4d;
+      margin-top: 10px;
+    }
+
+    .btn-delete:hover {
+      background-color: #cc0000;
+    }
+
+    .empty-cart {
+      text-align: center;
+      color: #777;
+      padding: 40px 20px;
+    }
+
+    .empty-cart .btn {
+      margin-top: 20px;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: white;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1);
+      font-size: 12px;
+    }
+
+    .bottom-nav div {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #333;
+      cursor: pointer;
+    }
+    .cart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .cart-items {
+      padding: 0 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding-bottom: 80px; /* bottom-nav 피하기 */
+    }
+
+    .cart-card {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+
+    .item-name {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #00c4c4;
+      margin-bottom: 12px;
+    }
+
+    .info-box {
+      background-color: #f0fefe;
+      border: 1px dashed #00c4c4;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+
+    .cart-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    .quantity-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .quantity-control button {
+      background-color: #00c4c4;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .quantity-control input {
+      width: 50px;
+      text-align: center;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 5px;
+    }
+
+    .btn-delete {
+      background-color: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .btn-delete:hover {
+      background-color: #cc0000;
+    }
+  </style>
+</head>
+<body>
+<div class="top-bar">
+  <div class="logo">PICK & GO</div>
+  <div class="status-icons">
+    <div onclick="alert('알림 페이지로 이동합니다')">🔔</div>
+    <div onclick="location.href='/cart'">🛒</div>
+  </div>
+</div>
+
+<main>
+  <div class="cart-header">
+    <h2>장바구니</h2>
+    <div class="action-buttons" th:if="${not #lists.isEmpty(cartItems)}">
+      <button class="btn" onclick="processPayment()">결제하기</button>
+    </div>
+  </div>
+
+  <section th:if="${not #lists.isEmpty(cartItems)}" class="cart-items">
+    <div th:each="cartItem : ${cartItems}" class="cart-card">
+
+      <div class="cart-info">
+        <h3 class="item-name" th:text="${cartItem.item.name}"></h3>
+        <div class="info-box"><strong>카테고리:</strong> <span th:text="${cartItem.item.category}"></span></div>
+        <div class="info-box"><strong>가격:</strong> <span th:text="${#numbers.formatInteger(cartItem.item.price, 0, 'COMMA')} + '원'"></span></div>
+        <div class="info-box"><strong>총 가격:</strong>
+          <span th:text="${#numbers.formatInteger(cartItem.item.price * cartItem.quantity, 0, 'COMMA')} + '원'"></span>
+        </div>
+      </div>
+
+      <div class="cart-actions">
+        <div class="quantity-control">
+          <button th:onclick="'updateQuantity(' + ${cartItem.id} + ', -1)'">➖</button>
+          <input type="number" th:value="${cartItem.quantity}" readonly th:id="'quantity-' + ${cartItem.id}">
+          <button th:onclick="'updateQuantity(' + ${cartItem.id} + ', 1)'">➕</button>
+        </div>
+        <button class="btn btn-delete" th:onclick="'deleteCartItem(' + ${cartItem.id} + ')'">🗑 삭제</button>
+      </div>
+
+    </div>
+  </section>
+
+  <section th:if="${#lists.isEmpty(cartItems)}">
+    <div class="empty-cart">
+      <p>🛒 장바구니가 비어 있습니다!</p>
+      <button onclick="location.href='/products'" class="btn">상품 보러 가기</button>
+    </div>
+  </section>
+</main>
+
+<div class="bottom-nav">
+  <div onclick="location.href='/'">🏠<br>홈</div>
+  <div onclick="location.href='/products'">🛍<br>상품</div>
+  <!--div onclick="location.href='/cart'">🛒<br>장바구니</div-->
+  <div onclick="location.href='/payment-result'">📃<br>결제내역</div>
+  <div onclick="location.href='/'">👤<br>MY</div>
+</div>
+
+<script>
+  function updateQuantity(cartItemId, change) {
+    const quantityInput = document.getElementById('quantity-' + cartItemId);
+    let currentQuantity = parseInt(quantityInput.value);
+    if (currentQuantity + change > 0) {
+      fetch('/updateCartItemQuantity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cartItemId: cartItemId, quantityChange: change })
+      })
+              .then(response => response.ok ? location.reload() : alert('수량 변경 중 오류 발생'))
+              .catch(() => alert('네트워크 오류 발생'));
+    }
+  }
+
+  function deleteCartItem(cartItemId) {
+    fetch('/deleteCartItem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cartItemId: cartItemId })
+    })
+            .then(response => response.ok ? location.reload() : alert('상품 삭제 중 오류 발생'))
+            .catch(() => alert('네트워크 오류 발생'));
+  }
+
+  function processPayment() {
+    fetch('/payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+            .then(response => {
+              if (response.ok) {
+                window.location.href = '/payment-result';
+              } else {
+                alert('결제 요청 중 오류 발생');
+              }
+            })
+            .catch(() => alert('네트워크 오류 발생'));
+  }
+</script>
+
+</body>
+</html>

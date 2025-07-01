@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>상품 목록</title>
+  <style>
+    body {
+      margin: 0;
+      padding-bottom: 60px;
+      font-family: sans-serif;
+      background-color: #f4f4f4;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 16px;
+      background-color: white;
+    }
+
+    .logo {
+      font-size: 30px;
+      color: #00c4c4;
+      font-weight: bold;
+    }
+
+    .status-icons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .status-icons div {
+      cursor: pointer;
+    }
+
+    .add-product {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 24px;
+      margin: 20px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      transition: all 0.3s ease;
+    }
+
+    .add-product h3 {
+      font-size: 1.4rem;
+      color: #00c4c4;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #00c4c4;
+      box-shadow: 0 0 0 2px rgba(0, 196, 196, 0.1);
+    }
+
+    .add-item-btn {
+      display: block;
+      width: 100%;
+      background-color: #00c4c4;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-top: 8px;
+    }
+
+    .add-item-btn:hover {
+      background-color: #009b9b;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .add-product input,
+    .add-product select {
+      width: 100%;
+      height: 40px;
+      padding: 8px 12px;
+      font-size: 15px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    .add-product input:focus,
+    .add-product select:focus {
+      outline: none;
+      border-color: #00c4c4;
+      box-shadow: 0 0 4px rgba(0, 196, 196, 0.3);
+    }
+
+    /* 모달 배경 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.4); /* 반투명 배경 */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    /* 모달 콘텐츠 */
+    .modal-content {
+      background-color: white;
+      padding: 24px 32px;
+      border-radius: 12px;
+      max-width: 500px;
+      width: 90%;
+      position: relative;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    /* 닫기 버튼 */
+    .close-modal {
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      font-size: 24px;
+      color: #888;
+      cursor: pointer;
+    }
+
+    .close-modal:hover {
+      color: #333;
+    }
+
+    /* 애니메이션 */
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10%);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .add-item-btn {
+      background-color: #00c4c4;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+
+    .product-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 0 16px;
+    }
+
+    .product-card {
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+    }
+
+    .product-name {
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #00c4c4;
+      margin-bottom: 10px;
+    }
+
+    .product-info-box {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: 12px 0;
+    }
+
+    .info-box {
+      background-color: #f0fefe;
+      border: 1px dashed #00c4c4;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      color: #333;
+    }
+
+    .product-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+    }
+
+    .btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+
+    .cart-btn {
+      background-color: #00c4c4;
+      color: white;
+    }
+
+    .cart-btn:hover {
+      background-color: #009b9b;
+    }
+
+    .delete-item-btn {
+      background-color: #ff4d4d;
+      color: white;
+    }
+
+    .delete-item-btn:hover {
+      background-color: #cc0000;
+    }
+
+    .add-item-btn:hover {
+      background-color: #009999;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background-color: white;
+      display: flex;
+      justify-content: space-around;
+      padding: 10px 0;
+      box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1);
+      font-size: 12px;
+    }
+
+    .bottom-nav div {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #333;
+      cursor: pointer;
+    }
+
+    .empty-product-list {
+      text-align: center;
+      color: #888;
+    }
+
+    h2.page-title {
+      margin: 20px;
+      color: #00c4c4;
+    }
+
+    #addProductBtn {
+      margin: 0 20px;
+      background-color: #00c4c4;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .product-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+      margin-top: 20px;
+    }
+
+    #addProductBtn {
+      background-color: #00c4c4;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    #addProductBtn:hover {
+      background-color: #009b9b;
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="logo">PICK & GO</div>
+  <div class="status-icons">
+    <div onclick="alert('알림 페이지로 이동합니다')">🔔</div>
+    <div onclick="location.href='/cart'">🛒</div>
+  </div>
+</div>
+
+<div class="product-header">
+  <h2 class="page-title">상품 목록</h2>
+  <button id="addProductBtn" onclick="openModal()">상품 추가</button>
+</div>
+
+<!-- 모달 배경 + 콘텐츠 -->
+<div id="addProductModal" class="modal-overlay" style="display: none;">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeModal()">&times;</span>
+    <div class="add-product">
+      <h3>상품 추가</h3>
+      <form id="productForm">
+        <div class="form-group">
+          <label for="name">상품명</label>
+          <input type="text" id="name" name="name" required />
+        </div>
+        <div class="form-group">
+          <label for="category">카테고리</label>
+          <select id="category" name="category" required>
+            <option value="">카테고리 선택</option>
+            <option value="electronics">전자제품</option>
+            <option value="clothing">의류</option>
+            <option value="books">도서</option>
+            <option value="home">가전/생활용품</option>
+            <option value="food">음식</option>
+            <option value="etc">기타</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="price">가격</label>
+          <input type="number" id="price" name="price" min="0" required />
+        </div>
+        <div class="form-group">
+          <label for="stockQuantity">재고 수량</label>
+          <input type="number" id="stockQuantity" name="stockQuantity" min="0" required />
+        </div>
+        <div class="form-group">
+          <label for="uniqueValue">고유 값</label>
+          <input type="text" id="uniqueValue" name="uniqueValue" required />
+        </div>
+        <button type="submit" class="add-item-btn">상품 추가</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<section th:if="${not #lists.isEmpty(items)}" class="product-list">
+  <div th:each="item : ${items}" class="product-card">
+    <article>
+      <h4 class="product-name" th:text="${item.name}"></h4>
+      <div class="product-info-box">
+        <div class="info-box"><strong>ID:</strong> <span th:text="${item.id}"></span></div>
+        <div class="info-box"><strong>카테고리:</strong> <span th:text="${item.category}"></span></div>
+        <div class="info-box"><strong>가격:</strong> <span th:text="${#numbers.formatInteger(item.price, 0, 'COMMA')} + '원'"></span></div>
+        <div class="info-box"><strong>재고 수량:</strong> <span th:text="${item.stockQuantity}"></span></div>
+        <div class="info-box"><strong>고유 값:</strong> <span th:text="${item.uniqueValue}"></span></div>
+      </div>
+      <div class="product-actions">
+        <button class="btn cart-btn" th:onclick="addToCart([[${item.uniqueValue}]], [[${item.price}]])">🛒 장바구니</button>
+        <button class="btn delete-item-btn" th:onclick="deleteItem([[${item.uniqueValue}]])">🗑 삭제</button>
+      </div>
+    </article>
+  </div>
+</section>
+
+<article th:if="${#lists.isEmpty(items)}" class="empty-product-list">
+  <p>등록된 상품이 없습니다.</p>
+</article>
+
+<div class="bottom-nav">
+  <div onclick="location.href='/'">🏠<br>홈</div>
+  <div onclick="location.href='/products'"> 🛍<br>상품</div>
+  <!--div onclick="location.href='/cart'">🛒<br>장바구니</div-->
+  <div onclick="location.href='/payment-result'">📃<br>결제내역</div>
+  <div onclick="location.href='/'">👤<br>MY</div>
+</div>
+
+<script>
+  document.getElementById('addProductBtn').addEventListener('click', function () {
+    const form = document.getElementById('addProductForm');
+    form.style.display = form.style.display === 'none' || form.style.display === '' ? 'block' : 'none';
+  });
+
+  document.getElementById('productForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const data = {
+      name: document.getElementById('name').value,
+      category: document.getElementById('category').value,
+      price: document.getElementById('price').value,
+      stockQuantity: document.getElementById('stockQuantity').value,
+      uniqueValue: document.getElementById('uniqueValue').value
+    };
+    fetch('/addItem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(r => {
+      if (r.ok) {
+        alert('상품이 추가되었습니다.');
+        window.location.href = "/products";
+      } else {
+        alert('추가 실패');
+      }
+    });
+  });
+
+  function addToCart(uniqueValue, price) {
+    fetch('/addCart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uniqueValue, price })
+    }).then(res => {
+      if (res.ok) alert('장바구니에 추가됨');
+      else alert('오류 발생');
+    });
+  }
+
+  function deleteItem(uniqueValue) {
+    if (!confirm('정말 삭제합니까?')) return;
+    fetch('/deleteItem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uniqueValue })
+    }).then(r => r.json()).then(d => {
+      alert(d.message);
+      if (d.success) location.reload();
+    });
+  }
+
+  function openModal() {
+    document.getElementById('addProductModal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('addProductModal').style.display = 'none';
+  }
+
+  // ESC 키 누르면 닫기
+  window.addEventListener('keydown', function (e) {
+    if (e.key === "Escape") closeModal();
+  });
+
+  // 배경 클릭 시 닫기
+  document.addEventListener('click', function (e) {
+    const modal = document.getElementById('addProductModal');
+    if (e.target === modal) closeModal();
+  });
+</script>
+
+</body>
+</html>
