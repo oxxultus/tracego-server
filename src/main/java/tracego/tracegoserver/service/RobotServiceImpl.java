@@ -144,28 +144,36 @@ public class RobotServiceImpl implements RobotService {
 
     @Override
     public void checkWorkingList(String uid, HttpServletResponse response) throws IOException {
+        // 작업 리스트가 비어있는 경우 (예: 아직 서버에서 데이터가 로드되지 않음)
         if (workingPaymentList == null) {
-            response.setStatus(HttpServletResponse.SC_NO_CONTENT);
-            return;
+            response.setStatus(HttpServletResponse.SC_NO_CONTENT); // HTTP 204: 콘텐츠 없음
+            return; // 더 이상 진행하지 않고 응답 종료
         }
+
+        // 작업 리스트에서 UID가 일치하고 상태가 "미완"인 항목을 첫 번째로 하나만 찾음
         Optional<WorkingPaymnetListItem> match = workingPaymentList.getWorkingPaymnetListItem().stream()
                 .filter(item -> item.getUid().equals(uid) && "미완".equals(item.getStatus()))
-                .findFirst();
+                .findFirst(); // 일치하는 항목이 없을 수도 있으므로 Optional 사용
 
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectNode json = mapper.createObjectNode();
-
-        if (match.isPresent()) {
-            json.put("count", match.get().getCount());
-            System.out.println("[서버][진열대 작업량 할당] 요청 진열대 UID: " + uid + " 의 값 " + match.get().getCount() + " 전달 완료.");
-        } else {
-            json.put("count", 0);
-            System.out.println("[서버][진열대 작업량 할당] 요청 진열대 UID: " + uid + " 에 해당하는 작업이 없어 수량 0 을 전달 합니다");
+        if (match.isEmpty()){
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            System.out.println("[서버][진열대 작업량 할당] 요청 UID: " + uid + " → 해당 작업 없음 (404 반환)");
+            return;
         }
-        byte[] jsonBytes = mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(json);
+
+        // Jackson 라이브러리의 ObjectMapper를 이용해 JSON 객체 생성 준비
+        ObjectMapper mapper = new ObjectMapper();
+        byte[] jsonBytes = mapper
+                .writerWithDefaultPrettyPrinter()
+                .writeValueAsBytes(match.get());
+
+        response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType("application/json");
         response.setContentLength(jsonBytes.length);
         response.getOutputStream().write(jsonBytes);
+
+        System.out.println("[서버][진열대 작업량 할당] 요청 UID: " + uid
+                + " → 작업 정보 전달 완료 (200 OK)");
     }
 
     @Override
@@ -184,17 +192,72 @@ public class RobotServiceImpl implements RobotService {
 
         match.get().setStatus("완료");
         System.out.println("[서버][진열대 작업완료] UID " + uid + " 작업 상태를 '완료'로 변경했습니다.");
-
-        // (선택) 모든 항목 완료시 추가 로직도 서비스에서 구현 가능
-
         printWorkingPaymentList();
 
+
         try {
-            String robotUrl = UriComponentsBuilder.fromHttpUrl("http://oxxultus-bot.kro.kr:8081/go")
+            String robotUrl = UriComponentsBuilder
+                    .fromHttpUrl("http://oxxultus.kro.kr:8081/go")
                     .toUriString();
+
             RestTemplate restTemplate = new RestTemplate();
-            restTemplate.getForEntity(robotUrl, String.class);
-            System.out.println("[서버 → 로봇] /go 명령 전송 완료");
+            ResponseEntity<String> goResponse = restTemplate.getForEntity(robotUrl, String.class);
+
+            // ✅ /go 명령이 정상 전송된 경우에만
+            if (goResponse.getStatusCode().is2xxSuccessful()) {
+                System.out.println("[서버 → 로봇] /go 명령 전송 완료");
+
+                /*
+                // 비동기로 5초 후 /down-rfid 요청 (재시도 포함)
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(5000);
+
+                        String downUrl = UriComponentsBuilder
+                                .fromHttpUrl("http://oxxultus.kro.kr:8082/down-rfid")
+                                .queryParam("uid", uid)
+                                .toUriString();
+
+                        RestTemplate downRestTemplate = new RestTemplate();
+
+                        int attempt = 0;
+                        int maxAttempts = 10;
+                        boolean success = false;
+
+                        while (attempt < maxAttempts) {
+                            try {
+                                ResponseEntity<String> downResponse = downRestTemplate.getForEntity(downUrl, String.class);
+
+                                if (downResponse.getStatusCode().is2xxSuccessful()) {
+                                    System.out.println("[서버 → 선반] /down-rfid 요청 성공 ✅ (시도 " + (attempt + 1) + "회): UID = " + uid);
+                                    success = true;
+                                    break;
+                                } else {
+                                    System.err.println("[서버 → 선반] /down-rfid 실패 (응답 코드: " + downResponse.getStatusCode() + ")");
+                                }
+                            } catch (Exception e) {
+                                System.err.println("[서버 → 선반] /down-rfid 요청 예외: " + e.getMessage());
+                            }
+
+                            attempt++;
+                            Thread.sleep(1000); // 1초 후 재시도
+                        }
+
+                        if (!success) {
+                            System.err.println("[서버 → 선반] ❌ /down-rfid 요청 실패 (최대 재시도 초과): UID = " + uid);
+                        }
+
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        System.err.println("RFID 요청 대기 중 인터럽트됨");
+                    }
+                }).start();
+                */
+
+            } else {
+                System.err.println("[서버 → 로봇] /go 명령 응답 실패: HTTP " + goResponse.getStatusCode());
+            }
+
         } catch (Exception e) {
             System.err.println("[서버 → 로봇] /go 명령 전송 실패: " + e.getMessage());
         }
